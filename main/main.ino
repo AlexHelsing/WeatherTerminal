@@ -2,7 +2,20 @@
 #include <HTTPClient.h>
 #include <Arduino_JSON.h>
 #include <TFT_eSPI.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 #include "config.h"
+
+
+
+// Time
+
+WiFiUDP ntpUDP;
+
+// By default 'pool.ntp.org' is used with 60 seconds update interval and
+// no offset
+NTPClient timeClient(ntpUDP, "0.se.pool.ntp.org");
+
 
 // Replace with your country code and city
 String city = "Boras";
@@ -25,6 +38,8 @@ void setup() {
 
   Serial.begin(115200);
 
+  timeClient.begin();
+
   WiFi.begin(SSID, WIFI_PASSWORD);
   Serial.println("Connecting");
   tft.drawString("Connecting to wifi", 0, 0);
@@ -43,6 +58,16 @@ void setup() {
   }
 
 void loop() {
+
+  timeClient.update();
+  timeClient.setTimeOffset(7200);
+
+  String currentTime = timeClient.getFormattedTime();
+
+  tft.setTextSize(3);
+  tft.drawString("Time: " + currentTime, 10, 210);
+
+  delay(1000);
   // Send an HTTP GET request
   if ((millis() - lastTime) > timerDelay) {
     // Check WiFi connection status
@@ -68,12 +93,14 @@ void loop() {
 
       // Weather Updates on screen
       tft.setTextSize(4);
-      tft.drawString("Boras", 100, 10);
-      tft.setTextSize(2);
-      tft.drawString("Temperature: " + temperature + "c", 20, 70);
-      tft.drawString("Humidity: " + humidity, 20, 100);
-      tft.drawString("Wind Speed: " + windspeed, 20, 130);
-      tft.drawString("Status: " + description, 20, 160);
+      tft.drawString("Boras", 100, 5);
+      tft.setTextSize(3);
+      tft.drawString("Temperature: " + temperature + "c", 5, 50);
+      tft.drawString("Humidity: " + humidity + "%", 5, 90);
+      tft.drawString("Wind Speed: " + windspeed, 5, 130);
+      tft.drawString("Status: " + description, 5, 170);
+      tft.setTextSize(3);
+      tft.drawString("Time: " + currentTime, 5, 210);
 
     }
     else {
